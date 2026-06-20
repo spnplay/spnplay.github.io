@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SPN Play | Watch Global TV online for free</title>
+  <link rel="icon" href="/wa/favicon.ico">
+<meta name="title" content="SPN Play | Watch Global TV online for free" />
+  <meta name="description" content="Stream live television channels and radio stations from around the world for free." />
+  <meta name="keywords" content="SPN Play, free live tv, global iptv, watch tv online, live radio stream, international television, web player, liquid glass player, m3u player" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="English" />
+  <meta name="author" content="SPN Play" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://spnplay.com/" />
+  <meta property="og:title" content="SPN Play | Free Online Global TV & Radio Streaming Platform" />
+  <meta property="og:description" content="Stream live television channels and radio stations from around the world for free. Experience fluid, interactive liquid glass UI with customizable layout setups and built-in studio sound mixers." />
+  <meta property="og:image" content="/wa/banner.jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="SPN Play" />
+
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://spnplay.com/" />
+  <meta property="twitter:title" content="SPN Play | Free Online Global TV & Radio Streaming Platform" />
+  <meta property="twitter:description" content="Stream live television channels and radio stations from around the world for free. Experience fluid, interactive liquid glass UI with customizable layout setups and built-in studio sound mixers." />
+  <meta property="twitter:image" content="/wa/banner.jpeg" />
+
+  <link rel="icon" type="image/x-icon" href="/wa/favicon.ico" />
+  <link rel="apple-touch-icon" href="/wa/logo.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    :root {
+      --c-purple: #b82bd7;
+      --c-sand: #f5d4a1;
+      --c-pink: #f55fa3;
+      --c-blue: #608bf3;
+      --c-teal: #49f4e1;
+      --lg-bg-color: rgba(255, 255, 255, 0.22);
+      --lg-highlight: rgba(255, 255, 255, 0.75);
+      --lg-text: #ffffff;
+      --lg-text-dim: rgba(255, 255, 255, 0.65);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Inter', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    body { 
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh; 
+      background: linear-gradient(135deg, var(--c-purple), var(--c-pink), var(--c-blue), var(--c-teal));
+      background-size: 400% 400%;
+      animation: fluid-bg 16s ease infinite alternate;
+      color: var(--lg-text); 
+      overflow: hidden;
+      padding: 1.5rem;
+      gap: 1.25rem;
+    }
+
+    @keyframes fluid-bg {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 50% 100%; }
+    }
+
+    main { 
+      display: grid; 
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: auto 1fr;
+      flex: 1; 
+      min-height: 0; 
+      gap: 1.5rem;
+      transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    main.alt-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr 180px;
+    }
+
+    .draggable-panel {
+      position: relative;
+      border-radius: 2rem;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+    }
+
+    header.draggable-panel { grid-column: 1 / -1; }
+    #sidebarPanel { order: 1; }
+    #playerPanel { order: 2; }
+
+    main.alt-layout #sidebarPanel { order: 3; }
+    main.alt-layout #sidebarPanel .sidebar-inner {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    main.alt-layout #sidebarPanel .channels {
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+      height: auto;
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    main.alt-layout #sidebarPanel .channel-item {
+      margin-bottom: 0;
+      white-space: nowrap;
+      min-width: 160px;
+    }
+    main.alt-layout #sidebarPanel .sidebar-control-group {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .jiggle {
+      animation: shakeNoise 0.28s linear infinite alternate;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      cursor: grab;
+    }
+    @keyframes shakeNoise {
+      0% { transform: rotate(-1deg) translateY(0); }
+      100% { transform: rotate(1deg) translateY(-1px); }
+    }
+
+    .panel-action-btn {
+      position: absolute;
+      top: 0.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.4);
+      z-index: 10;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .jiggle .panel-action-btn { display: flex; }
+    
+    .remove-badge {
+      left: 0.75rem;
+      background: var(--c-pink);
+    }
+    .move-badge {
+      right: 0.75rem;
+      background: var(--c-blue);
+      cursor: move;
+    }
+
+    .sidebar-inner, .player-inner, .header-inner {
+      position: relative;
+      z-index: 3;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    .header-inner {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+
+    header h1 { 
+      font-size: 1.4rem; 
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--c-sand);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input { 
+      width: 100%; 
+      padding: 0.8rem 1rem; 
+      border-radius: 1rem; 
+      border: 1px solid rgba(255, 255, 255, 0.25); 
+      background: rgba(0, 0, 0, 0.15); 
+      color: #ffffff; 
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--c-teal);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    button.liquid-btn { 
+      position: relative;
+      width: 100%;
+      padding: 0.85rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(184, 43, 215, 0.3);
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer; 
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.4), 0 4px 12px rgba(0,0,0,0.1);
+    }
+    button.liquid-btn:hover { 
+      transform: scale(1.02);
+      background: rgba(184, 43, 215, 0.45);
+      border-color: rgba(255,255,255,0.6);
+    }
+    button.liquid-btn:active { transform: scale(0.98); }
+
+    .channels { 
+      flex: 1; 
+      overflow-y: auto; 
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      border-radius: 1rem; 
+      padding: 0.4rem;
+    }
+    .channels::-webkit-scrollbar { width: 5px; height: 5px; }
+    .channels::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+
+    .channel-item { 
+      padding: 0.75rem 1rem; 
+      border-radius: 0.75rem;
+      margin-bottom: 0.3rem;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    .channel-item:hover { background: rgba(255, 255, 255, 0.15); }
+    .channel-item.active { 
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--c-teal);
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+    video { 
+      width: 100%; 
+      height: 100%; 
+      background: #000000; 
+      border-radius: 1.25rem; 
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .player-controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    #nowPlaying {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    #nowPlaying::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--c-teal);
+      border-radius: 50%;
+    }
+
+    .media-accessories {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .accessory-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.3s ease;
+    }
+    .accessory-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-1px);
+    }
+    .accessory-btn.casting {
+      background: var(--c-blue);
+      border-color: var(--c-teal);
+      animation: castPulse 1.5s infinite alternate;
+    }
+    @keyframes castPulse {
+      from { opacity: 0.8; }
+      to { opacity: 1; filter: brightness(1.2); }
+    }
+
+    /* VLC Fallback Card */
+    .vlc-fallback-card {
+      position: absolute;
+      bottom: 2rem;
+      right: 2rem;
+      background: rgba(0, 0, 0, 0.88);
+      border: 1px solid var(--c-pink);
+      padding: 1.25rem;
+      border-radius: 1.25rem;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 300px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+      animation: fallbackSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes fallbackSlideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .vlc-fallback-card p {
+      font-size: 0.8rem;
+      color: var(--lg-text);
+      line-height: 1.4;
+    }
+    .vlc-btn {
+      background: var(--c-pink);
+      border: none;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      color: white;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+    }
+    .vlc-btn.secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .vlc-btn.secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .status { font-size: 0.78rem; color: var(--c-sand); min-height: 1.2rem; }
+
+    .glass-filter { position: absolute; inset: 0; z-index: 0; backdrop-filter: blur(20px); filter: url(#lg-dist); isolation: isolate; }
+    .glass-overlay { position: absolute; inset: 0; z-index: 1; background: var(--lg-bg-color); }
+    .glass-specular { position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 1px 1px 0 var(--lg-highlight), inset 0 0 6px var(--lg-highlight); pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<svg style="position: absolute; width: 0; height: 0;" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="lg-dist">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
+</svg>
+
+<main id="mainGrid">
+
+  <header id="headerPanel" class="draggable-panel">
+    <div class="glass-filter"></div><div class="glass-overlay"></div><div class="glass-specular"></div>
+    <div class="header-inner">
+      <h1>SPN Play</h1>
+      <a href="https://github.com/iptv-org/iptv" target="_blank">Source Database</a>
+    </div>
+  </header>
+
+  <aside id="sidebarPanel" class="draggable-panel">
+    <div class="glass-filter"></div><div class="glass-overlay"></div><div class="glass-specular"></div>
+    
+    <div class="panel-action-btn remove-badge">×</div>
+    <div class="panel-action-btn move-badge" id="moveTrigger">⇄</div>
+
+    <div class="sidebar-inner">
+      <div class="sidebar-control-group">
+        <label>Search Country (by code)</label>
+        <input id="countryInput" type="text" placeholder="e.g. US,UK,AU,...">
+        <button id="loadCountryBtn" class="liquid-btn">Load Channels</button>
+      </div>
+
+      <div class="sidebar-control-group">
+        <label>Search Channels</label>
+        <input id="searchInput" type="text" placeholder="News,iTV,...">
+      </div>
+
+      <div class="status" id="status">Ready.</div>
+      <div class="channels" id="channelList"></div>
+    </div>
+  </aside>
+
+  <section id="playerPanel" class="draggable-panel">
+    <div class="glass-filter"></div><div class="glass-overlay"></div><div class="glass-specular"></div>
+    
+    <div class="player-inner">
+      <div class="player-controls-row">
+        <div id="nowPlaying">No stream running</div>
+        
+        <div class="media-accessories">
+          <div class="accessory-btn" id="castDeviceBtn">
+            <span>⎋</span> Cast Stream
+          </div>
+        </div>
+      </div>
+
+      <div class="video-container">
+        <video id="video" controls autoplay playsinline webkit-playsinline></video>
+        
+        <div class="vlc-fallback-card" id="vlcFallback">
+          <p>Playback issue detected. Open stream in an external player?</p>
+          <button class="vlc-btn" id="vlcLaunchBtn">Open in VLC Player</button>
+          <button class="vlc-btn secondary" id="installGuideBtn">Install Guide</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const mainGrid      = document.getElementById("mainGrid");
+  const sidebarPanel  = document.getElementById("sidebarPanel");
+  const playerPanel   = document.getElementById("playerPanel");
+  const moveTrigger   = document.getElementById("moveTrigger");
+  const castDeviceBtn = document.getElementById("castDeviceBtn");
+  const vlcFallback   = document.getElementById("vlcFallback");
+  const vlcLaunchBtn  = document.getElementById("vlcLaunchBtn");
+  const installGuideBtn = document.getElementById("installGuideBtn");
+
+  let isEditing = false;
+  let longClickTimer;
+
+  // ── Layout edit mode (long press) ──
+  [sidebarPanel, playerPanel].forEach(panel => {
+    panel.addEventListener("mousedown", (e) => {
+      if (e.target.closest('input, button, .channels, a')) return;
+      longClickTimer = setTimeout(() => {
+        isEditing = true;
+        sidebarPanel.classList.add("jiggle");
+        playerPanel.classList.add("jiggle");
+      }, 700);
+    });
+    panel.addEventListener("mouseup",    () => clearTimeout(longClickTimer));
+    panel.addEventListener("mouseleave", () => clearTimeout(longClickTimer));
+  });
+
+  moveTrigger.addEventListener("click", () => {
+    if (!isEditing) return;
+    mainGrid.classList.toggle("alt-layout");
+    isEditing = false;
+    sidebarPanel.classList.remove("jiggle");
+    playerPanel.classList.remove("jiggle");
+  });
+
+  document.querySelector(".remove-badge").addEventListener("click", () => {
+    sidebarPanel.style.display = "none";
+    mainGrid.style.gridTemplateColumns = "1fr";
+    isEditing = false;
+    sidebarPanel.classList.remove("jiggle");
+    playerPanel.classList.remove("jiggle");
+  });
+
+  castDeviceBtn.addEventListener("click", () => {
+    castDeviceBtn.classList.toggle("casting");
+    if (castDeviceBtn.classList.contains("casting")) {
+      castDeviceBtn.innerHTML = "<span>⎋</span> Connecting Stage...";
+      setTimeout(() => { castDeviceBtn.innerHTML = "<span>⎋</span> Disconnect Cast"; }, 2000);
+    } else {
+      castDeviceBtn.innerHTML = "<span>⎋</span> Cast Stream";
+    }
+  });
+
+  // ── Core IPTV logic ──
+  const countryInput  = document.getElementById("countryInput");
+  const loadCountryBtn = document.getElementById("loadCountryBtn");
+  const statusEl      = document.getElementById("status");
+  const channelListEl = document.getElementById("channelList");
+  const videoEl       = document.getElementById("video");
+  const nowPlayingEl  = document.getElementById("nowPlaying");
+  const searchInput   = document.getElementById("searchInput");
+
+  let channels = [];
+  let filteredChannels = [];
+  let activeIndex = -1;
+  let hls = null;
+  let countryFiles = {};
+  let currentStreamUrl = '';
+
+  async function loadCountryList() {
+    try {
+      const res = await fetch("https://api.github.com/repos/iptv-org/iptv/contents/streams");
+      const data = await res.json();
+      data.forEach(file => {
+        if (file.name.endsWith(".m3u")) {
+          const code = file.name.replace(".m3u", "").toLowerCase();
+          countryFiles[code] = code;
+        }
+      });
+      setStatus("Global references indexed.");
+    } catch {
+      setStatus("Indices synchronization failure.");
+    }
+  }
+
+  function setStatus(msg) { statusEl.textContent = msg; }
+
+  function parseM3U(text) {
+    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+    const result = [];
+    let current = null;
+    for (const line of lines) {
+      if (line.startsWith("#EXTINF:")) {
+        const info = line.substring(8);
+        const [metaPart, ...nameParts] = info.split(",");
+        const name = nameParts.join(",").trim();
+        const meta = {};
+        const attrRegex = /(\w+?)="(.*?)"/g;
+        let m;
+        while ((m = attrRegex.exec(metaPart)) !== null) { meta[m[1]] = m[2]; }
+        current = {
+          name:  name || meta["tvg-name"] || "External Feed",
+          group: meta["group-title"] || "General",
+          url:   ""
+        };
+      } else if (!line.startsWith("#") && current) {
+        current.url = line;
+        result.push(current);
+        current = null;
+      }
+    }
+    return result;
+  }
+
+  function renderChannels(list) {
+    channelListEl.innerHTML = "";
+    list.forEach((ch, index) => {
+      const div = document.createElement("div");
+      div.className = "channel-item" + (index === activeIndex ? " active" : "");
+      div.innerHTML = `<strong>${ch.name}</strong><br><small>${ch.group}</small>`;
+      div.onclick = () => playChannel(index);
+      channelListEl.appendChild(div);
+    });
+  }
+
+  function playChannel(index) {
+    const ch = filteredChannels[index];
+    if (!ch) return;
+
+    activeIndex = index;
+    currentStreamUrl = ch.url;
+    renderChannels(filteredChannels);
+    nowPlayingEl.textContent = "Playing: " + ch.name;
+    vlcFallback.style.display = "none";
+
+    // Update URL for sharing
+    updateURL(ch);
+
+    if (hls) { hls.destroy(); hls = null; }
+    videoEl.removeAttribute("src");
+    videoEl.load();
+
+    if (ch.url.includes(".m3u8") || ch.url.includes("/hls/")) {
+      if (videoEl.canPlayType("application/vnd.apple.mpegurl") ||
+          videoEl.canPlayType("application/x-mpegURL")) {
+        videoEl.src = ch.url;
+        videoEl.play().catch(() => triggerDecoderFallback(ch.url));
+      } else if (Hls.isSupported()) {
+        hls = new Hls({ xhrSetup: xhr => { xhr.withCredentials = false; } });
+        hls.loadSource(ch.url);
+        hls.attachMedia(videoEl);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoEl.play().catch(() => triggerDecoderFallback(ch.url));
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) triggerDecoderFallback(ch.url);
+        });
+      }
+    } else {
+      videoEl.src = ch.url;
+      videoEl.play().catch(() => triggerDecoderFallback(ch.url));
+    }
+  }
+
+  // ── VLC launcher — works on Windows, Mac, Linux, iOS, Android ──
+  function launchVLC(url) {
+    if (!url) return;
+
+    // Method 1: hidden iframe (avoids browser navigation warning, works on most desktops)
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden;';
+    document.body.appendChild(iframe);
+    try { iframe.contentWindow.location.href = 'vlc://' + url; } catch (_) {}
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+
+      // Method 2: window.location (Windows desktop VLC fallback)
+      try { window.location.href = 'vlc://' + url; } catch (_) {}
+    }, 150);
+
+    // Method 3: x-callback scheme for iOS VLC
+    setTimeout(() => {
+      try {
+        window.location.href = 'vlc-x-callback://x-callback-url/stream?url=' + encodeURIComponent(url);
+      } catch (_) {}
+    }, 400);
+  }
+
+  function triggerDecoderFallback(streamUrl) {
+    setStatus("Playback failed — try opening in VLC.");
+    currentStreamUrl = streamUrl;
+    vlcFallback.style.display = "flex";
+  }
+
+  vlcLaunchBtn.addEventListener("click", () => {
+    launchVLC(currentStreamUrl);
+  });
+
+  installGuideBtn.addEventListener("click", () => {
+    alert("Download VLC Media Player from videolan.org (desktop) or your device's app store (iOS/Android) to stream external feeds directly.");
+  });
+
+  // ── Country load ──
+  async function loadCountry() {
+    const input = countryInput.value.trim().toLowerCase();
+    if (!input) return setStatus("Specify index destination.");
+    let code = countryFiles[input] || Object.keys(countryFiles).find(c => c.includes(input)) || input;
+
+    setStatus("Handshaking list pipeline...");
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/iptv-org/iptv/master/streams/${code}.m3u`);
+      if (!res.ok) throw new Error('not found');
+      const text = await res.text();
+      channels = parseM3U(text);
+      filteredChannels = channels.slice();
+      renderChannels(filteredChannels);
+      setStatus(`Mounted ${channels.length} stations.`);
+    } catch {
+      setStatus("Pipeline loading breakdown.");
+    }
+  }
+
+  loadCountryBtn.onclick = loadCountry;
+  countryInput.addEventListener("keydown", e => { if (e.key === "Enter") loadCountry(); });
+
+  searchInput.oninput = () => {
+    const q = searchInput.value.toLowerCase();
+    filteredChannels = q
+      ? channels.filter(ch => ch.name.toLowerCase().includes(q) || ch.group.toLowerCase().includes(q))
+      : channels.slice();
+    renderChannels(filteredChannels);
+  };
+
+  // ── Deep-link: sync active channel to URL & restore on load ──
+  function updateURL(ch) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('ch',   encodeURIComponent(ch.url));
+    params.set('name', encodeURIComponent(ch.name));
+    history.replaceState(null, '', '?' + params.toString());
+  }
+
+  function restoreFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const url  = params.get('ch')   ? decodeURIComponent(params.get('ch'))   : null;
+    const name = params.get('name') ? decodeURIComponent(params.get('name')) : null;
+    if (!url) return;
+
+    // Inject as a channel and play it directly
+    const sharedCh = { name: name || url, group: 'Shared Link', url };
+    channels.push(sharedCh);
+    filteredChannels = channels.slice();
+    activeIndex = channels.length - 1;
+    renderChannels(filteredChannels);
+
+    nowPlayingEl.textContent = "Playing: " + sharedCh.name;
+    currentStreamUrl = url;
+    vlcFallback.style.display = "none";
+
+    if (hls) { hls.destroy(); hls = null; }
+    videoEl.removeAttribute("src");
+    videoEl.load();
+
+    if (url.includes(".m3u8") || url.includes("/hls/")) {
+      if (videoEl.canPlayType("application/vnd.apple.mpegurl") ||
+          videoEl.canPlayType("application/x-mpegURL")) {
+        videoEl.src = url;
+        videoEl.play().catch(() => triggerDecoderFallback(url));
+      } else if (Hls.isSupported()) {
+        hls = new Hls({ xhrSetup: xhr => { xhr.withCredentials = false; } });
+        hls.loadSource(url);
+        hls.attachMedia(videoEl);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoEl.play().catch(() => triggerDecoderFallback(url));
+        });
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) triggerDecoderFallback(url);
+        });
+      }
+    } else {
+      videoEl.src = url;
+      videoEl.play().catch(() => triggerDecoderFallback(url));
+    }
+  }
+
+  // ── Boot ──
+  loadCountryList();
+  setTimeout(restoreFromURL, 0);
+</script>
+
+</body>
+</html>
