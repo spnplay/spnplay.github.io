@@ -403,7 +403,61 @@
     if (/Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent)) {
     window.location.href = "/mobile/";
 }
+  // ── Deep-link: sync active channel to URL & restore on load ──
+function updateURL(ch) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('ch', encodeURIComponent(ch.url));
+  params.set('name', encodeURIComponent(ch.name));
+  history.replaceState(null, '', '?' + params.toString());
+}
+
+function restoreFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const url  = params.get('ch')   ? decodeURIComponent(params.get('ch'))   : null;
+  const name = params.get('name') ? decodeURIComponent(params.get('name')) : null;
+  if (!url) return;
+
+  // Works in both versions (old uses nowPlayingEl differently)
+  const npEl = document.getElementById('nowPlaying');
+  const npText = document.getElementById('nowPlayingText');
+  if (npText) npText.textContent = name || url;
+  else if (npEl) npEl.textContent = 'Playing: ' + (name || url);
+
+  // Use whichever play function exists
+  if (typeof playStream === 'function') playStream(url);
+  else if (typeof playChannel === 'function') {
+    // Old version needs a fake channel object injected
+    channels.push({ name: name || url, group: 'Shared Link', url });
+    filteredChannels = channels.slice();
+    activeIndex = channels.length - 1;
+    renderChannels(filteredChannels);
+    playChannel(activeIndex);
+  }
+}
+
+// Patch into whichever pick function exists
+const _pickChannel  = typeof pickChannel  !== 'undefined' ? pickChannel  : null;
+const _playChannel  = typeof playChannel  !== 'undefined' ? playChannel  : null;
+
+if (_pickChannel) {
+  window.pickChannel = function(idx) {
+    _pickChannel(idx);
+    const ch = (typeof filtered !== 'undefined' ? filtered : filteredChannels)[idx];
+    if (ch) updateURL(ch);
+  };
+}
+if (_playChannel && !_pickChannel) {
+  window.playChannel = function(idx) {
+    _playChannel(idx);
+    const ch = filteredChannels[idx];
+    if (ch) updateURL(ch);
+  };
+}
+
+// Run on page load — after a tick so page variables are ready
+setTimeout(restoreFromURL, 0);
   </script>
+  
 
 <svg style="position: absolute; width: 0; height: 0;" version="1.1" xmlns="http://www.w3.org/2000/svg">
   <defs>
