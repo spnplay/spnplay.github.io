@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SPN Play | Watch Global TV</title>
+  <link rel="icon" href="/wa/favicon.ico">
+  <meta name="title" content="SPN Play | Watch Global TV online for free" />
+  <meta name="description" content="Stream live television channels and radio stations from around the world for free." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- HLS.js for broad HLS stream support -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <!-- Shaka Player for DASH + DRM streams -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --c-purple: #b82bd7;
+      --c-sand: #f5d4a1;
+      --c-pink: #f55fa3;
+      --c-blue: #608bf3;
+      --c-teal: #49f4e1;
+      --lg-bg: rgba(255,255,255,0.18);
+      --lg-highlight: rgba(255,255,255,0.6);
+      --lg-text: #fff;
+      --lg-dim: rgba(255,255,255,0.6);
+      --radius: 1.25rem;
+      --radius-sm: 0.75rem;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--c-purple), var(--c-pink), var(--c-blue), var(--c-teal));
+      background-size: 400% 400%;
+      animation: fluid-bg 16s ease infinite alternate;
+      color: var(--lg-text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fluid-bg {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 50% 100%; }
+    }
+
+    /* ── GLASS LAYER UTIL ── */
+    .glass {
+      position: relative;
+      background: var(--lg-bg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: inset 1px 1px 0 var(--lg-highlight), 0 8px 24px rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    /* ══════════════════════
+       DESKTOP LAYOUT (≥768px)
+    ══════════════════════ */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 1rem;
+      gap: 0.75rem;
+    }
+
+    /* Header */
+    #header {
+      border-radius: var(--radius);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+    #header a { font-size: 0.8rem; color: var(--c-sand); text-decoration: none; opacity: 0.8; }
+
+    /* Body area */
+    #body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0.75rem;
+      min-height: 0;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.75rem;
+      overflow: hidden;
+    }
+
+    .ctrl-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--c-sand);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.25rem;
+    }
+
+    .ctrl-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    input {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(0,0,0,0.18);
+      color: #fff;
+      font-size: 0.88rem;
+    }
+    input::placeholder { color: rgba(255,255,255,0.4); }
+    input:focus { outline: none; border-color: var(--c-teal); background: rgba(0,0,0,0.28); }
+
+    .liquid-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.38);
+      background: rgba(184,43,215,0.28);
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.35), 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s, background 0.2s;
+    }
+    .liquid-btn:active { transform: scale(0.97); }
+    .liquid-btn:hover { background: rgba(184,43,215,0.42); }
+
+    #status {
+      font-size: 0.75rem;
+      color: var(--c-sand);
+      min-height: 1.1rem;
+      opacity: 0.9;
+    }
+
+    #channelList {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.14);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 0.35rem;
+    }
+    #channelList::-webkit-scrollbar { width: 4px; }
+    #channelList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    .ch-item {
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.6rem;
+      cursor: pointer;
+      margin-bottom: 0.25rem;
+      background: rgba(255,255,255,0.04);
+      transition: background 0.15s;
+    }
+    .ch-item:hover  { background: rgba(255,255,255,0.13); }
+    .ch-item.active { background: rgba(0,0,0,0.28); border: 1px solid var(--c-teal); }
+    .ch-item strong { font-size: 0.88rem; display: block; }
+    .ch-item small   { font-size: 0.72rem; color: var(--lg-dim); }
+
+    /* Player panel */
+    #playerPanel {
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.6rem;
+      overflow: hidden;
+    }
+
+    .now-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 0.5rem;
+    }
+    #nowPlaying {
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+      flex: 1;
+    }
+    #nowPlaying::before {
+      content: '';
+      flex-shrink: 0;
+      width: 8px; height: 8px;
+      background: var(--c-teal);
+      border-radius: 50%;
+    }
+    #nowPlayingText {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge-row { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+    .badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.28);
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.6rem;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .badge:hover { background: rgba(255,255,255,0.25); }
+    #playerStatus {
+      font-size: 0.72rem;
+      color: var(--c-sand);
+      flex-shrink: 0;
+      min-height: 1rem;
+    }
+
+    /* Video wrapper */
+    #videoWrap {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      border-radius: 1rem;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: block;
+    }
+
+    /* Fallback card */
+    #vlcCard {
+      display: none;
+      position: absolute;
+      bottom: 1rem; right: 1rem;
+      background: rgba(0,0,0,0.88);
+      border: 1px solid var(--c-pink);
+      border-radius: 1rem;
+      padding: 1rem;
+      max-width: 280px;
+      flex-direction: column;
+      gap: 0.6rem;
+      animation: slideUp 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+      z-index: 20;
+    }
+    #vlcCard p { font-size: 0.8rem; line-height: 1.45; }
+    #vlcCard.show { display: flex; }
+    @keyframes slideUp {
+      from { transform: translateY(16px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .vlc-btn {
+      background: var(--c-pink);
+      border: none;
+      padding: 0.45rem;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+
+    /* ══════════════════════
+       MOBILE LAYOUT (<768px)
+    ══════════════════════ */
+    @media (max-width: 767px) {
+      #app {
+        padding: 0.6rem;
+        gap: 0.6rem;
+        /* Use safe area insets for notch/home bar */
+        padding-top: calc(0.6rem + env(safe-area-inset-top));
+        padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+      }
+
+      #header { padding: 0.65rem 1rem; }
+      #header h1 { font-size: 1.1rem; }
+
+      #body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      /* On mobile: player on top, sidebar below */
+      #playerPanel { order: 1; min-height: 0; }
+      #sidebar     { order: 2; max-height: 45vh; }
+
+      /* Sidebar scrolls horizontally for channel list */
+      #sidebar {
+        padding: 0.75rem;
+        gap: 0.5rem;
+      }
+
+      .search-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+      .search-row input { flex: 1; }
+      .search-row .liquid-btn { width: auto; padding: 0.7rem 1rem; white-space: nowrap; }
+
+      #channelList {
+        /* horizontal scrolling on mobile */
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.35rem;
+        height: auto;
+        flex: none;
+      }
+      #channelList::-webkit-scrollbar { height: 3px; }
+
+      .ch-item {
+        min-width: 140px;
+        margin-bottom: 0;
+        margin-right: 0.35rem;
+        flex-shrink: 0;
+      }
+
+      #videoWrap { min-height: 200px; }
+
+      video { border-radius: 0.75rem; }
+      #nowPlayingText { font-size: 0.85rem; }
+
+      .badge { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+    }
+
+    /* Very small phones */
+    @media (max-width: 400px) {
+      #header h1 { font-size: 1rem; }
+      #header a { display: none; }
+    }
+
+    /* Landscape mobile — wide & short */
+    @media (max-width: 900px) and (orientation: landscape) {
+      #body {
+        grid-template-columns: 260px 1fr;
+        grid-template-rows: 1fr;
+      }
+      #playerPanel { order: 2; }
+      #sidebar     { order: 1; max-height: none; }
+      #channelList {
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: unset;
+        flex: 1;
+      }
+      .ch-item { min-width: unset; margin-right: 0; margin-bottom: 0.25rem; }
+    }
+
+    /* Loading pulse */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 1; }
+    }
+    .loading { animation: pulse 1.2s ease infinite; }
+  </style>
+</head>
+<body>
+<script>
+  if (!/Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent)) {
+    window.location.replace("https://spnplay.github.io/");
+}
+    </script>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header" class="glass">
+    <h1>SPN Play</h1>
+    <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">Source DB ↗</a>
+  </header>
+
+  <!-- BODY -->
+  <div id="body">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="glass">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Country Code</div>
+        <div class="search-row">
+          <input id="countryInput" type="text" inputmode="text" autocomplete="off"
+                 placeholder="e.g. us, gb, cz …">
+          <button id="loadBtn" class="liquid-btn">Load</button>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Filter Channels</div>
+        <input id="searchInput" type="search" inputmode="search" autocomplete="off"
+               placeholder="Search…">
+      </div>
+
+      <div id="status">Ready.</div>
+      <div id="channelList"></div>
+    </aside>
+
+    <!-- PLAYER -->
+    <section id="playerPanel" class="glass">
+      <div class="now-row">
+        <div id="nowPlaying">
+          <span id="nowPlayingText">No stream selected</span>
+        </div>
+        <div class="badge-row">
+          <span class="badge" id="techBadge">—</span>
+          <span class="badge" id="retryBtn" style="display:none">↺ Retry</span>
+        </div>
+      </div>
+
+      <div id="playerStatus"></div>
+
+      <div id="videoWrap">
+        <video id="video" controls playsinline webkit-playsinline x5-playsinline
+               preload="none"></video>
+
+        <!-- External player fallback -->
+        <div id="vlcCard">
+          <p>Can't play this stream in-browser. Open in an external player?</p>
+          <a class="vlc-btn" id="vlcLink" href="#">Open in VLC</a>
+          <a class="vlc-btn" id="mxLink" href="#"
+             style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3)">
+            Open in MX Player</a>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /body -->
+</div><!-- /app -->
+
+
+<script>
+/* ═══════════════════════════════════════════════
+   STREAM COMPATIBILITY MATRIX
+   Strategy: try each method in order until one works.
+   1. Native HLS (Safari/iOS)
+   2. HLS.js (Chrome/Firefox desktop & Android)
+   3. Shaka Player (DASH / HLS fallback)
+   4. Direct <video src> (MP4, RTMP-via-proxy, etc.)
+   5. External player deep-links (VLC / MX Player)
+═══════════════════════════════════════════════ */
+
+const $  = id => document.getElementById(id);
+const countryInput  = $('countryInput');
+const searchInput   = $('searchInput');
+const loadBtn       = $('loadBtn');
+const statusEl      = $('status');
+const channelListEl = $('channelList');
+const videoEl       = $('video');
+const nowPlayingEl  = $('nowPlayingText');
+const techBadge     = $('techBadge');
+const retryBtn      = $('retryBtn');
+const playerStatus  = $('playerStatus');
+const vlcCard       = $('vlcCard');
+const vlcLink       = $('vlcLink');
+const mxLink        = $('mxLink');
+
+let channels = [], filtered = [], activeIdx = -1;
+let hlsInst = null, shakaInst = null;
+let countryMap = {};
+let currentStreamUrl = '';
+let retryCount = 0;
+const MAX_RETRY = 2;
+
+// ── Shaka init ──
+if (shaka && shaka.Player && shaka.Player.isBrowserSupported()) {
+  shaka.polyfill.installAll();
+}
+
+// ── Status helpers ──
+function setStatus(msg, loading = false) {
+  statusEl.textContent = msg;
+  statusEl.className = loading ? 'loading' : '';
+}
+function setPlayerStatus(msg) { playerStatus.textContent = msg; }
+
+// ── Country index ──
+async function loadCountryIndex() {
+  try {
+    const res = await fetch('https://api.github.com/repos/iptv-org/iptv/contents/streams');
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('bad response');
+    data.forEach(f => {
+      if (f.name.endsWith('.m3u')) {
+        const code = f.name.replace('.m3u', '').toLowerCase();
+        countryMap[code] = code;
+      }
+    });
+    setStatus('Ready — enter a country code.');
+  } catch {
+    setStatus('Index load failed. Try entering a code anyway.');
+  }
+}
+
+// ── M3U parser ──
+function parseM3U(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = [];
+  let cur = null;
+  for (const line of lines) {
+    if (line.startsWith('#EXTINF:')) {
+      const comma = line.indexOf(',');
+      const meta  = line.substring(8, comma > 8 ? comma : undefined);
+      const name  = comma > -1 ? line.slice(comma + 1).trim() : '';
+      const attrs = {};
+      let m;
+      const re = /(\w[\w-]*)="([^"]*)"/g;
+      while ((m = re.exec(meta)) !== null) attrs[m[1]] = m[2];
+      cur = {
+        name:  name || attrs['tvg-name'] || 'Unnamed',
+        group: attrs['group-title'] || 'General',
+        url:   ''
+      };
+    } else if (!line.startsWith('#') && cur) {
+      cur.url = line;
+      result.push(cur);
+      cur = null;
+    }
+  }
+  return result;
+}
+
+// ── Render list ──
+function renderList(list) {
+  channelListEl.innerHTML = '';
+  list.forEach((ch, i) => {
+    const div = document.createElement('div');
+    div.className = 'ch-item' + (i === activeIdx ? ' active' : '');
+    div.innerHTML = `<strong>${escHtml(ch.name)}</strong><small>${escHtml(ch.group)}</small>`;
+    div.addEventListener('click', () => pickChannel(i));
+    channelListEl.appendChild(div);
+  });
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Load country ──
+async function loadCountry() {
+  const raw = countryInput.value.trim().toLowerCase();
+  if (!raw) return setStatus('Enter a country code first.');
+
+  // Try exact match, then partial
+  let code = countryMap[raw];
+  if (!code) code = Object.keys(countryMap).find(c => c.includes(raw));
+  if (!code) {
+    // Attempt direct load even if index didn't load
+    code = raw;
+  }
+
+  setStatus(`Loading ${code.toUpperCase()} channels…`, true);
+  try {
+    const url = `https://raw.githubusercontent.com/iptv-org/iptv/master/streams/${code}.m3u`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Not found');
+    const text = await res.text();
+    channels = parseM3U(text);
+    filtered  = channels.slice();
+    activeIdx = -1;
+    renderList(filtered);
+    setStatus(`${channels.length} channels loaded.`);
+  } catch {
+    setStatus('Could not load that country code.');
+  }
+}
+
+loadBtn.addEventListener('click', loadCountry);
+countryInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadCountry(); });
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase();
+  filtered = q ? channels.filter(c => c.name.toLowerCase().includes(q) || c.group.toLowerCase().includes(q))
+                : channels.slice();
+  activeIdx = -1;
+  renderList(filtered);
+});
+
+
+/* ═══════════════════════════════════════
+   MULTI-METHOD STREAM PLAYER
+   Detects stream type and picks best engine
+═══════════════════════════════════════ */
+
+function pickChannel(idx) {
+  activeIdx = idx;
+  renderList(filtered);
+  const ch = filtered[idx];
+  if (!ch) return;
+  nowPlayingEl.textContent = ch.name;
+  vlcCard.classList.remove('show');
+  retryCount = 0;
+  retryBtn.style.display = 'none';
+  playStream(ch.url);
+}
+
+retryBtn.addEventListener('click', () => {
+  if (currentStreamUrl) {
+    retryCount = 0;
+    playStream(currentStreamUrl);
+  }
+});
+
+function playStream(url) {
+  currentStreamUrl = url;
+  destroyPlayers();
+  setPlayerStatus('');
+  vlcCard.classList.remove('show');
+
+  const ext = (url.split('?')[0].split('#')[0]).toLowerCase();
+
+  if (ext.endsWith('.m3u8') || url.includes('m3u8') || url.includes('/hls/')) {
+    tryHLS(url);
+  } else if (ext.endsWith('.mpd') || url.includes('.mpd') || url.includes('manifest')) {
+    tryShaka(url);
+  } else if (ext.endsWith('.mp4') || ext.endsWith('.mkv') || ext.endsWith('.webm') ||
+             ext.endsWith('.ts')  || ext.endsWith('.flv')) {
+    tryDirect(url);
+  } else {
+    // Unknown — try HLS first (most common for IPTV), then fallback
+    tryHLS(url);
+  }
+
+  // Set external links regardless
+  vlcLink.href = 'vlc://' + url;
+  mxLink.href  = 'intent:' + url + '#Intent;package=com.mxtech.videoplayer.ad;end';
+}
+
+// 1. HLS via native or HLS.js
+function tryHLS(url) {
+  techBadge.textContent = 'HLS';
+  setPlayerStatus('Connecting…');
+
+  // iOS / Safari native HLS
+  if (videoEl.canPlayType('application/vnd.apple.mpegurl') ||
+      videoEl.canPlayType('application/x-mpegURL')) {
+    videoEl.src = url;
+    videoEl.load();
+    videoEl.play()
+      .then(() => setPlayerStatus(''))
+      .catch(() => tryShaka(url));
+    return;
+  }
+
+  // HLS.js for Chrome/Firefox/Android
+  if (Hls.isSupported()) {
+    hlsInst = new Hls({
+      enableWorker:       true,
+      lowLatencyMode:     true,
+      maxBufferLength:    30,
+      maxMaxBufferLength: 60,
+      xhrSetup: xhr => { xhr.withCredentials = false; }
+    });
+    hlsInst.on(Hls.Events.ERROR, (_, d) => {
+      if (d.fatal) {
+        setPlayerStatus('HLS error — trying DASH…');
+        destroyPlayers();
+        tryShaka(url);
+      }
+    });
+    hlsInst.on(Hls.Events.MANIFEST_PARSED, () => {
+      videoEl.play().catch(() => {});
+      setPlayerStatus('');
+    });
+    hlsInst.loadSource(url);
+    hlsInst.attachMedia(videoEl);
+  } else {
+    tryShaka(url);
+  }
+}
+
+// 2. Shaka Player (HLS + DASH)
+function tryShaka(url) {
+  techBadge.textContent = 'DASH/Shaka';
+  setPlayerStatus('Trying Shaka…');
+
+  if (!window.shaka || !shaka.Player.isBrowserSupported()) {
+    tryDirect(url);
+    return;
+  }
+
+  shakaInst = new shaka.Player(videoEl);
+  shakaInst.configure({
+    streaming: { bufferingGoal: 20, rebufferingGoal: 2 }
+  });
+  shakaInst.addEventListener('error', () => {
+    destroyPlayers();
+    tryDirect(url);
+  });
+  shakaInst.load(url)
+    .then(() => {
+      videoEl.play().catch(() => {});
+      setPlayerStatus('');
+    })
+    .catch(() => {
+      destroyPlayers();
+      tryDirect(url);
+    });
+}
+
+// 3. Direct <video src>
+function tryDirect(url) {
+  techBadge.textContent = 'Direct';
+  setPlayerStatus('Trying direct…');
+
+  videoEl.src = url;
+  videoEl.load();
+  videoEl.play()
+    .then(() => setPlayerStatus(''))
+    .catch(() => {
+      if (retryCount < MAX_RETRY) {
+        retryCount++;
+        setPlayerStatus(`Retry ${retryCount}/${MAX_RETRY}…`);
+        setTimeout(() => tryDirect(url), 1500);
+      } else {
+        showFallback();
+      }
+    });
+
+  videoEl.onerror = () => {
+    if (retryCount < MAX_RETRY) {
+      retryCount++;
+      setPlayerStatus(`Error — retry ${retryCount}/${MAX_RETRY}…`);
+      setTimeout(() => tryDirect(url), 1500);
+    } else {
+      showFallback();
+    }
+  };
+}
+
+// 4. External player fallback
+function showFallback() {
+  techBadge.textContent = '⚠ Failed';
+  setPlayerStatus('Could not play in-browser. Try an external player.');
+  vlcCard.classList.add('show');
+  retryBtn.style.display = 'inline-block';
+}
+
+function destroyPlayers() {
+  if (hlsInst)  { try { hlsInst.destroy(); }  catch {} hlsInst  = null; }
+  if (shakaInst){ try { shakaInst.destroy(); } catch {} shakaInst = null; }
+  videoEl.removeAttribute('src');
+  videoEl.load();
+  videoEl.onerror = null;
+}
+
+// ── Boot ──
+loadCountryIndex();
+</script>
+</body>
+</html>
