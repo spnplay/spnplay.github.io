@@ -399,6 +399,11 @@
   </style>
 </head>
 <body>
+  <script>
+    if (/Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent)) {
+    window.location.href = "/mobile/";
+}
+  </script>
 
 <svg style="position: absolute; width: 0; height: 0;" version="1.1" xmlns="http://www.w3.org/2000/svg">
   <defs>
