@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Stream Lost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --c-purple: #b82bd7;
+      --c-sand:   #f5d4a1;
+      --c-pink:   #f55fa3;
+      --c-blue:   #608bf3;
+      --c-teal:   #49f4e1;
+      --c-green:  #4ade80;
+      --c-red:    #f87171;
+      --lg-bg-color: rgba(255, 255, 255, 0.22);
+      --lg-highlight: rgba(255, 255, 255, 0.75);
+      --lg-text: #ffffff;
+      --lg-text-dim: rgba(255, 255, 255, 0.65);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Inter', sans-serif; 
+      -webkit-font-smoothing: antialiased; 
+      user-select: none; 
+    }
+
+    body {
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh;
+      /* Set the banner image as the background layout */
+      background: url('https://github.com/spnplay/spnplay.github.io/blob/main/wa/banner.jpeg?raw=true') no-repeat center center;
+      background-size: cover;
+      color: var(--lg-text); 
+      overflow: hidden; 
+      padding: 1.5rem; 
+      gap: 1.25rem;
+    }
+
+    /* ── 404 Layout Override ── */
+    .error-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      flex: 1; 
+      min-height: 0; 
+      gap: 1.5rem;
+    }
+
+    .draggable-panel {
+      position: relative; 
+      border-radius: 2rem; 
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      display: flex; 
+      flex-direction: column; 
+      background: transparent;
+    }
+
+    .header-inner { 
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: row; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 1rem 2rem; 
+    }
+
+    header h1 { 
+      font-size: 1.4rem; 
+      font-weight: 700; 
+      letter-spacing: -0.02em; 
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3); 
+    }
+
+    /* ── Centered Error Display Content ── */
+    .error-content {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 3rem;
+      height: 100%;
+    }
+
+    .error-code {
+      font-size: clamp(5rem, 15vw, 9rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: transparent;
+      background: linear-gradient(to bottom, #ffffff, var(--c-sand));
+      -webkit-background-clip: text;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 4px 15px rgba(0,0,0,0.4));
+    }
+
+    .error-content h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .error-desc {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--lg-text-dim);
+      max-width: 480px;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ── Shared Component Framework ── */
+    button.liquid-btn {
+      position: relative; 
+      width: 100%; 
+      padding: 0.85rem; 
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.4); 
+      background: rgba(184, 43, 215, 0.4);
+      color: white; 
+      font-size: 0.9rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.4), 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    button.liquid-btn:hover  { transform: scale(1.02); background: rgba(184, 43, 215, 0.55); border-color: rgba(255,255,255,0.6); }
+    button.liquid-btn:active { transform: scale(0.98); }
+
+    .live-dot {
+      width: 8px; 
+      height: 8px; 
+      background: var(--c-teal); 
+      border-radius: 50%; 
+      flex-shrink: 0;
+    }
+    .live-dot.error { background: var(--c-red); animation: none; }
+
+    #engineBadge {
+      font-size: 0.65rem; 
+      font-weight: 700; 
+      padding: 0.2rem 0.5rem; 
+      border-radius: 0.4rem;
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.2); 
+      color: var(--c-sand);
+    }
+
+    /* ── Liquid Glassmorphism Core ── */
+    .glass-filter   { position: absolute; inset: 0; z-index: 0; backdrop-filter: blur(25px); filter: url(#lg-dist); isolation: isolate; }
+    .glass-overlay  { position: absolute; inset: 0; z-index: 1; background: var(--lg-bg-color); }
+    .glass-specular { position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 1px 1px 0 var(--lg-highlight), inset 0 0 6px var(--lg-highlight); pointer-events: none; }
+  </style>
+</head>
+<body>
+
+  <main class="error-container">
+    
+    <header class="draggable-panel">
+      <div class="glass-filter"></div>
+      <div class="glass-overlay"></div>
+      <div class="glass-specular"></div>
+      <div class="header-inner">
+        <h1>SIGNAL INTERRUPTED</h1>
+        <div class="media-accessories">
+          <div class="live-dot error"></div>
+          <span id="engineBadge" style="display: inline-block;">STATUS: 404</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="draggable-panel" id="errorPanel">
+      <div class="glass-filter"></div>
+      <div class="glass-overlay"></div>
+      <div class="glass-specular"></div>
+      <div class="error-content">
+        <div class="error-code">404</div>
+        <h2>Channel Unavailable</h2>
+        <p class="error-desc">The stream path you are trying to pull has encountered an invalid pointer or the transmission key has expired.</p>
+        
+        <div style="width: 100%; max-width: 320px; margin-top: 1rem;">
+          <button class="liquid-btn" onclick="window.location.href='/'">Return to Dashboard</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+    <defs>
+      <filter id="lg-dist">
+        <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+</body>
+</html>
