@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPN Play - TV Edition</title>
+  <meta name="description" content="Lightweight TV streaming" />
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body { 
+      background: #1a1a1a;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 15px 25px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 3px solid #4da6ff;
+    }
+
+    header h1 { 
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    
+    header a { 
+      color: #4da6ff; 
+      text-decoration: none; 
+      font-size: 1.2rem;
+      padding: 10px 20px;
+      background: #333;
+      border-radius: 6px;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    main.alt-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 200px;
+    }
+
+    aside, section {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid #444;
+    }
+
+    aside:focus-within, section:focus-within {
+      border-color: #4da6ff;
+      box-shadow: 0 0 20px rgba(77, 166, 255, 0.3);
+    }
+
+    main.alt-layout aside .sidebar-inner {
+      flex-direction: row;
+      gap: 15px;
+      align-items: center;
+    }
+
+    main.alt-layout aside .channels {
+      flex-direction: row;
+      height: auto;
+      max-height: 120px;
+      width: auto;
+    }
+
+    main.alt-layout aside .channel-item {
+      white-space: nowrap;
+      min-width: 180px;
+      margin-bottom: 0;
+    }
+
+    label {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #aaa;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1a1a1a;
+      border: 2px solid #444;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4da6ff;
+      background: #252525;
+      box-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #4da6ff;
+      color: #000;
+      border: 2px solid #4da6ff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+      width: 100%;
+      transition: all 0.3s;
+    }
+
+    button:focus {
+      outline: none;
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(77, 166, 255, 0.5);
+      background: #2196F3;
+    }
+
+    button:active { 
+      opacity: 0.8; 
+      transform: scale(0.98);
+    }
+
+    #scrollUpBtn, #scrollDownBtn {
+      width: auto !important;
+      padding: 15px 20px;
+      font-size: 1.8rem;
+      min-width: 70px;
+      flex-shrink: 0;
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: #888;
+      margin: 4px 0;
+      min-height: 20px;
+      flex-shrink: 0;
+    }
+
+    .channels {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+      max-height: 100%;
+    }
+
+    .channels::-webkit-scrollbar { 
+      width: 10px; 
+    }
+    .channels::-webkit-scrollbar-thumb { 
+      background: #4da6ff; 
+      border-radius: 6px;
+    }
+
+    .channel-item {
+      padding: 10px 12px;
+      background: #333;
+      cursor: pointer;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      border: 2px solid #444;
+      transition: all 0.2s;
+      min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .channel-item:hover { 
+      background: #404040;
+      border-color: #555;
+    }
+
+    .channel-item:focus {
+      outline: none;
+      background: #4da6ff;
+      color: #000;
+      border-color: #4da6ff;
+      transform: scale(1.02);
+      box-shadow: 0 0 15px rgba(77, 166, 255, 0.5);
+    }
+
+    .channel-item.active {
+      background: #4da6ff;
+      color: #000;
+      border-color: #4da6ff;
+      font-weight: bold;
+    }
+
+    .channel-item strong { 
+      display: block; 
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+    
+    .channel-item small { 
+      display: block; 
+      font-size: 1rem; 
+      opacity: 0.8;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 8px;
+      border: 2px solid #4da6ff;
+    }
+
+    .player-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    #nowPlaying {
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.3rem;
+    }
+
+    #nowPlaying::before {
+      content: '●';
+      color: #4da6ff;
+      font-size: 1.2rem;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .vlc-fallback {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #2a2a2a;
+      border: 3px solid #ff6b6b;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 350px;
+      z-index: 100;
+      font-size: 1.1rem;
+    }
+
+    .vlc-btn {
+      padding: 12px 15px;
+      background: #ff6b6b;
+      color: #fff;
+      border: 2px solid #ff6b6b;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .vlc-btn:focus, .vlc-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+    }
+
+    .sidebar-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .move-badge {
+      cursor: pointer;
+      color: #4da6ff;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-decoration: underline;
+      padding: 10px 12px;
+      background: #333;
+      border-radius: 6px;
+      border: 2px solid #4da6ff;
+      text-align: center;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .move-badge:focus, .move-badge:hover {
+      background: #4da6ff;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    .sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .scroll-controls {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    @media (max-width: 1280px) {
+      body {
+        padding: 15px;
+        gap: 15px;
+      }
+      header {
+        padding: 10px 15px;
+      }
+      header h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📺 SPN Play - TV Edition</h1>
+  <a href="https://github.com/iptv-org/iptv" target="_blank">Source Database</a>
+</header>
+
+<main id="mainGrid">
+  <aside id="sidebarPanel">
+    <div class="sidebar-inner">
+      <div class="sidebar-control-group">
+        <label>🌍 Country Code</label>
+        <input id="countryInput" type="text" placeholder="US, UK, AU..." autocomplete="off">
+        <button id="loadCountryBtn">Load Channels</button>
+      </div>
+
+      <div class="sidebar-control-group">
+        <label>🔍 Search Channels</label>
+        <input id="searchInput" type="text" placeholder="Type channel name..." autocomplete="off">
+      </div>
+
+      <div class="status" id="status">Ready</div>
+      
+      <div class="scroll-controls">
+        <button id="scrollUpBtn" title="Scroll Up">⬆️</button>
+        <div class="channels" id="channelList"></div>
+        <button id="scrollDownBtn" title="Scroll Down">⬇️</button>
+      </div>
+      
+      <button class="move-badge" id="moveTrigger">⇄ Toggle Layout</button>
+    </div>
+  </aside>
+
+  <section id="playerPanel">
+    <div class="player-controls">
+      <div id="nowPlaying">No stream</div>
+    </div>
+    <video id="video" controls autoplay></video>
+    
+    <div class="vlc-fallback" id="vlcFallback">
+      <p>Stream error detected. Open in VLC Player?</p>
+      <a class="vlc-btn" id="vlcLaunchLink" href="#">🎬 Open in VLC</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  const mainGrid = document.getElementById("mainGrid");
+  const sidebarPanel = document.getElementById("sidebarPanel");
+  const playerPanel = document.getElementById("playerPanel");
+  const moveTrigger = document.getElementById("moveTrigger");
+  const vlcFallback = document.getElementById("vlcFallback");
+  const vlcLaunchLink = document.getElementById("vlcLaunchLink");
+  const countryInput = document.getElementById("countryInput");
+  const loadCountryBtn = document.getElementById("loadCountryBtn");
+  const scrollUpBtn = document.getElementById("scrollUpBtn");
+  const scrollDownBtn = document.getElementById("scrollDownBtn");
+  const statusEl = document.getElementById("status");
+  const channelListEl = document.getElementById("channelList");
+  const videoEl = document.getElementById("video");
+  const nowPlayingEl = document.getElementById("nowPlaying");
+  const searchInput = document.getElementById("searchInput");
+
+  let channels = [];
+  let filteredChannels = [];
+  let activeIndex = -1;
+  let countryFiles = {};
+  let focusedChannelIndex = -1;
+
+  // Toggle layout
+  moveTrigger.addEventListener("click", () => {
+    mainGrid.classList.toggle("alt-layout");
+    focusedChannelIndex = -1;
+  });
+
+  // Load country on Enter key
+  countryInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      loadCountry();
+    }
+  });
+
+  // Scroll channel list up
+  scrollUpBtn.addEventListener("click", () => {
+    channelListEl.scrollBy({ top: -200, behavior: "smooth" });
+  });
+
+  // Scroll channel list down
+  scrollDownBtn.addEventListener("click", () => {
+    channelListEl.scrollBy({ top: 200, behavior: "smooth" });
+  });
+
+  // Keyboard navigation for channels
+  document.addEventListener("keydown", (e) => {
+    if (filteredChannels.length === 0) return;
+    if (e.target === countryInput || e.target === searchInput) return; // Don't navigate when typing
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (focusedChannelIndex === -1) {
+        focusedChannelIndex = 0;
+      } else {
+        focusedChannelIndex = Math.min(focusedChannelIndex + 1, filteredChannels.length - 1);
+      }
+      updateChannelFocus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (focusedChannelIndex === -1) {
+        focusedChannelIndex = filteredChannels.length - 1;
+      } else {
+        focusedChannelIndex = Math.max(focusedChannelIndex - 1, 0);
+      }
+      updateChannelFocus();
+    } else if (e.key === "Enter" && focusedChannelIndex >= 0) {
+      e.preventDefault();
+      playChannel(focusedChannelIndex);
+    }
+  });
+
+  function updateChannelFocus() {
+    const items = document.querySelectorAll(".channel-item");
+    items.forEach((item, idx) => {
+      if (idx === focusedChannelIndex) {
+        item.focus();
+        setTimeout(() => item.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
+      }
+    });
+  }
+
+  function setStatus(msg) { statusEl.textContent = msg; }
+
+  function parseM3U(text) {
+    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+    const result = [];
+    let current = null;
+
+    for (const line of lines) {
+      if (line.startsWith("#EXTINF:")) {
+        const info = line.substring(8);
+        const [metaPart, ...nameParts] = info.split(",");
+        const name = nameParts.join(",").trim();
+        const meta = {};
+        const attrRegex = /(\w+?)="(.*?)"/g;
+        let m;
+        while ((m = attrRegex.exec(metaPart)) !== null) { 
+          meta[m[1]] = m[2]; 
+        }
+        current = {
+          name: name || meta["tvg-name"] || "Stream",
+          group: meta["group-title"] || "General",
+          url: ""
+        };
+      } else if (!line.startsWith("#") && current) {
+        current.url = line;
+        result.push(current);
+        current = null;
+      }
+    }
+    return result;
+  }
+
+  function renderChannels(list) {
+    channelListEl.innerHTML = "";
+    list.forEach((ch, index) => {
+      const div = document.createElement("div");
+      div.className = "channel-item" + (index === activeIndex ? " active" : "");
+      div.tabIndex = 0;
+      div.innerHTML = `<strong>${ch.name}</strong><small>${ch.group}</small>`;
+      div.onclick = () => playChannel(index);
+      div.addEventListener("focus", () => {
+        focusedChannelIndex = index;
+      });
+      channelListEl.appendChild(div);
+    });
+    focusedChannelIndex = -1;
+  }
+
+  function playChannel(index) {
+    const ch = filteredChannels[index];
+    if (!ch) return;
+
+    activeIndex = index;
+    focusedChannelIndex = index;
+    renderChannels(filteredChannels);
+    nowPlayingEl.textContent = "▶️ Now Playing: " + ch.name;
+    vlcFallback.style.display = "none";
+    videoEl.src = ch.url;
+    videoEl.play().catch(() => {
+      vlcLaunchLink.href = "vlc://" + ch.url;
+      vlcFallback.style.display = "flex";
+    });
+  }
+
+  async function loadCountryList() {
+    try {
+      const res = await fetch("https://api.github.com/repos/iptv-org/iptv/contents/streams");
+      const data = await res.json();
+      data.forEach(file => {
+        if (file.name.endsWith(".m3u")) {
+          const code = file.name.replace(".m3u", "").toLowerCase();
+          countryFiles[code] = code;
+        }
+      });
+      setStatus("Ready - Enter country code");
+    } catch (err) {
+      setStatus("Offline mode");
+    }
+  }
+
+  async function loadCountry() {
+    const input = countryInput.value.trim().toLowerCase();
+    if (!input) return setStatus("Enter country code");
+    
+    let code = countryFiles[input] || Object.keys(countryFiles).find(c => c.includes(input));
+    if (!code) return setStatus("Country not found");
+
+    setStatus("Loading channels...");
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/iptv-org/iptv/master/streams/${code}.m3u`);
+      const text = await res.text();
+      channels = parseM3U(text);
+      filteredChannels = channels.slice();
+      renderChannels(filteredChannels);
+      searchInput.value = "";
+      setStatus(`✅ Loaded ${channels.length} channels`);
+    } catch (err) {
+      setStatus("Failed to load");
+    }
+  }
+
+  loadCountryBtn.onclick = loadCountry;
+  
+  searchInput.oninput = () => {
+    const q = searchInput.value.toLowerCase();
+    filteredChannels = q ? channels.filter(ch => ch.name.toLowerCase().includes(q) || ch.group.toLowerCase().includes(q)) : channels.slice();
+    renderChannels(filteredChannels);
+    if (q && filteredChannels.length > 0) {
+      setStatus(`🔍 Found ${filteredChannels.length} channel${filteredChannels.length !== 1 ? 's' : ''}`);
+    } else if (q && filteredChannels.length === 0) {
+      setStatus("❌ No channels found");
+    } else {
+      setStatus(`📺 Showing ${channels.length} channels`);
+    }
+  };
+
+  loadCountryList();
+
+  // Auto-focus first input
+  setTimeout(() => countryInput.focus(), 100);
+</script>
+
+</body>
+</html>
